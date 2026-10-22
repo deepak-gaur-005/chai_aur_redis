@@ -1,0 +1,36 @@
+import express from 'express'
+import Redis from 'ioredis'
+
+const app = express();
+app.use(express.json()); // Parse incoming JSON request bodies
+
+const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379'); 
+
+const QUEUE_KEY = 'queue:emails';
+
+app.post('/emails', async (req, res) => {
+    const job = {
+        to : req.body.to,
+        subject : req.body.subject || 'No Subject',
+        body: req.body.body ||'No Content',
+        createdAt: new Date().toISOString()
+    }
+
+    await redis.lpush(QUEUE_KEY, JSON.stringify(job)); // lpush -> left side se push and right se pop  (rpush -> vice-versa)
+    res.json({ queued: true, job}); //job is a JavaScript object containing the information needed to perform a task (line 13)
+})
+
+app.get('/emails/process-one', async (req, res) => {
+    const rawJob = await redis.rpop(QUEUE_KEY); // rpop -> ride se pop
+    if(!rawJob) {
+        return res.json({message: 'NO jobs in the queue'});
+    }
+    const job = JSON.parse(rawJob);
+    //Simulate email sending
+    res.json({message: 'Email sent', job});
+})
+
+app.listen(3000, () => {
+    console.log('Server is running on port 3000');
+    }
+)
