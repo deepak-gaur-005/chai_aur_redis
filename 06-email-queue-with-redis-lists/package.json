@@ -1,5 +1,5 @@
 {
-  "name": "02-setup-local-redis",
+  "name": "06-email-queue-with-redis-lists",
   "version": "1.0.0",
   "private": true,
   "type": "module",
